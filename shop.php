@@ -407,9 +407,9 @@ $categories = array_values(array_unique(array_column($products, 'category')));
 </div>
 
 <!-- Product Detail Modal -->
-<div id="productDetailModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-  <div class="app-card w-full max-w-md p-5 rounded-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto bg-white">
-    <button onclick="document.getElementById('productDetailModal').classList.add('hidden')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 font-bold text-xl p-1">&times;</button>
+<div id="productDetailModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4" onclick="closeProductModalOnBackdrop(event)">
+  <div class="app-card w-full max-w-md p-5 sm:p-6 rounded-3xl shadow-2xl relative max-h-[90vh] overflow-y-auto bg-white border border-slate-200" onclick="event.stopPropagation()">
+    <button onclick="document.getElementById('productDetailModal').classList.add('hidden')" class="absolute top-3.5 right-3.5 z-20 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-lg backdrop-blur-md transition-all hover:scale-110">✕</button>
     
     <div class="h-52 rounded-xl bg-slate-100 overflow-hidden mb-3 border border-slate-200 flex items-center justify-center relative">
       <img id="detailMainImg" class="w-full h-full object-cover">
@@ -817,14 +817,14 @@ function renderStorefrontGrid() {
       </div>
     `;
 
-    if ((idx + 1) % 8 === 0 && midAdsData.length > 0) {
+    if (((idx + 1) % 4 === 0 || (idx === filtered.length - 1 && midAdIndex === 0)) && midAdsData.length > 0) {
       const ad = midAdsData[midAdIndex % midAdsData.length];
       trackAdImpression(ad);
       midAdIndex++;
       html += `
         <div class="col-span-full my-3 rounded-2xl overflow-hidden shadow-md bg-slate-900 border border-slate-800 h-28 sm:h-44 relative">
           ${ad.link_url ? `<a href="${ad.link_url}" target="_blank"><img src="${ad.image_url}" class="w-full h-full object-cover"></a>` : `<img src="${ad.image_url}" class="w-full h-full object-cover">`}
-          <span class="absolute top-2 right-2 px-2 py-0.5 text-[9px] font-black rounded-md uppercase ${ad.is_global ? 'bg-amber-400 text-slate-950 border border-amber-500' : 'bg-brand-500 text-slate-950'}">
+          <span class="absolute top-2 right-2 px-2.5 py-1 text-[9px] font-black rounded-md uppercase ${ad.is_global ? 'bg-amber-400 text-slate-950 border border-amber-500' : 'bg-brand-500 text-slate-950'}">
             ${ad.is_global ? '★ Platform Deal' : 'Promoted Banner'}
           </span>
         </div>
@@ -835,6 +835,21 @@ function renderStorefrontGrid() {
   container.innerHTML = html;
   updateCartBadge();
 }
+
+function closeProductModalOnBackdrop(e) {
+  if (e && e.target && e.target.id === 'productDetailModal') {
+    document.getElementById('productDetailModal').classList.add('hidden');
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const pModal = document.getElementById('productDetailModal');
+    if (pModal && !pModal.classList.contains('hidden')) {
+      pModal.classList.add('hidden');
+    }
+  }
+});
 
 function openProductModal(prodId) {
   const p = productsData.find(item => item.id === prodId);
