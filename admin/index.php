@@ -153,16 +153,35 @@ $totalPaymentsLogged = (float)$pdo->query("SELECT SUM(amount) FROM payment_log")
 // Conversion Rate
 $conversionRate = $totalTenants > 0 ? round(($activeTenants / $totalTenants) * 100, 1) : 0;
 
-// Registered Tenants Table Pagination (5 per page)
-$tenantPage  = max(1, (int)($_GET['tpage'] ?? 1));
-$tenantLimit = 5;
+// Registered Tenants Table Database Search & Pagination (5 per page)
+$tenantSearch = trim($_GET['q'] ?? $_GET['tq'] ?? '');
+$tenantPage   = max(1, (int)($_GET['tpage'] ?? 1));
+$tenantLimit  = 5;
 
-$totalTenantsCount = (int)$pdo->query("SELECT COUNT(*) FROM tenants")->fetchColumn();
+$countSql = "
+    SELECT COUNT(*) 
+    FROM tenants t 
+    LEFT JOIN plans p ON t.plan_id = p.id
+    WHERE 1=1
+";
+$countParams = [];
+if (!empty($tenantSearch)) {
+    $countSql .= " AND (t.shop_name LIKE ? OR t.subdomain LIKE ? OR t.whatsapp_number LIKE ? OR t.category LIKE ?)";
+    $countParams[] = "%$tenantSearch%";
+    $countParams[] = "%$tenantSearch%";
+    $countParams[] = "%$tenantSearch%";
+    $countParams[] = "%$tenantSearch%";
+}
+
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($countParams);
+$totalTenantsCount = (int)$countStmt->fetchColumn();
+
 $tenantTotalPages  = max(1, (int)ceil($totalTenantsCount / $tenantLimit));
 if ($tenantPage > $tenantTotalPages) $tenantPage = $tenantTotalPages;
 $tenantOffset = ($tenantPage - 1) * $tenantLimit;
 
-$tenantsStmt = $pdo->prepare("
+$sql = "
     SELECT t.*, p.name as plan_name,
            (SELECT COUNT(*) FROM products WHERE tenant_id = t.id) as product_count,
            (SELECT COUNT(*) FROM orders WHERE tenant_id = t.id) as order_count,
@@ -170,10 +189,20 @@ $tenantsStmt = $pdo->prepare("
            (SELECT SUM(total) FROM orders WHERE tenant_id = t.id AND status = 'completed') as total_revenue
     FROM tenants t 
     LEFT JOIN plans p ON t.plan_id = p.id
-    ORDER BY t.id DESC
-    LIMIT $tenantLimit OFFSET $tenantOffset
-");
-$tenantsStmt->execute();
+    WHERE 1=1
+";
+$queryParams = [];
+if (!empty($tenantSearch)) {
+    $sql .= " AND (t.shop_name LIKE ? OR t.subdomain LIKE ? OR t.whatsapp_number LIKE ? OR t.category LIKE ?)";
+    $queryParams[] = "%$tenantSearch%";
+    $queryParams[] = "%$tenantSearch%";
+    $queryParams[] = "%$tenantSearch%";
+    $queryParams[] = "%$tenantSearch%";
+}
+$sql .= " ORDER BY t.id DESC LIMIT $tenantLimit OFFSET $tenantOffset";
+
+$tenantsStmt = $pdo->prepare($sql);
+$tenantsStmt->execute($queryParams);
 $tenants = $tenantsStmt->fetchAll();
 
 // Fetch Payment Log History (5 per page)
@@ -270,24 +299,29 @@ require_once __DIR__ . '/header.php';
         <span class="text-xs font-bold text-slate-500" id="tenantCountLabel"><?= count($tenants) ?> Total Tenants</span>
       </div>
 
-      <!-- Live Search Bar -->
-      <div class="relative w-full sm:w-72">
-        <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
+      <!-- Direct Database Search Form -->
+      <form method="GET" action="/admin/index.php" class="flex items-center space-x-2 w-full sm:w-80">
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <input
+            type="text"
+            name="q"
+            value="<?= htmlspecialchars($tenantSearch) ?>"
+            placeholder="Search shop name, subdomain, phone…"
+            class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-300 transition-all"
+          >
+          <?php if (!empty($tenantSearch)): ?>
+            <a href="/admin/index.php" class="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-700 text-xs font-black">✕</a>
+          <?php endif; ?>
         </div>
-        <input
-          type="text"
-          id="tenantSearchBar"
-          oninput="filterTenants(this.value)"
-          placeholder="Search shop name, subdomain, phone…"
-          class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-300 transition-all"
-        >
-        <button onclick="clearTenantSearch()" id="clearSearchBtn" class="hidden absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-700">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+        <button type="submit" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs transition-colors shadow-sm">
+          Search
         </button>
-      </div>
+      </form>
     </div>
 
     <!-- No Results Message -->
@@ -430,17 +464,17 @@ require_once __DIR__ . '/header.php';
       <?php if ($tenantTotalPages > 1): ?>
         <div class="flex items-center space-x-1">
           <?php if ($tenantPage > 1): ?>
-            <a href="?tpage=<?= $tenantPage - 1 ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">&laquo; Prev</a>
+            <a href="?tpage=<?= $tenantPage - 1 ?><?= !empty($tenantSearch) ? '&q=' . urlencode($tenantSearch) : '' ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">&laquo; Prev</a>
           <?php endif; ?>
 
           <?php for ($i = 1; $i <= $tenantTotalPages; $i++): ?>
-            <a href="?tpage=<?= $i ?>" class="px-3 py-1.5 rounded-lg text-xs font-black transition-colors <?= $i === $tenantPage ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' ?>">
+            <a href="?tpage=<?= $i ?><?= !empty($tenantSearch) ? '&q=' . urlencode($tenantSearch) : '' ?>" class="px-3 py-1.5 rounded-lg text-xs font-black transition-colors <?= $i === $tenantPage ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' ?>">
               <?= $i ?>
             </a>
           <?php endfor; ?>
 
           <?php if ($tenantPage < $tenantTotalPages): ?>
-            <a href="?tpage=<?= $tenantPage + 1 ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">Next &raquo;</a>
+            <a href="?tpage=<?= $tenantPage + 1 ?><?= !empty($tenantSearch) ? '&q=' . urlencode($tenantSearch) : '' ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">Next &raquo;</a>
           <?php endif; ?>
         </div>
       <?php endif; ?>
