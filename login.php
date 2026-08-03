@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
-            if ($user['plan_status'] === 'suspended') {
-                $errors[] = "Your shop account is currently suspended. Please contact platform support.";
+            if ($user['plan_status'] === 'suspended' || (isset($user['is_active']) && (int)$user['is_active'] === 0)) {
+                $errors[] = "Your shop account is currently suspended or disabled. Please contact platform support.";
             } else {
                 $_SESSION['user_id']     = $user['id'];
                 $_SESSION['tenant_id']   = $user['tenant_id'];

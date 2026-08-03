@@ -44,15 +44,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if ($action === 'toggle_active' && $userId > 0) {
-        $pdo->prepare("UPDATE admin_users SET is_active = NOT is_active WHERE id = ?")->execute([$userId]);
-        respond_flash('success', "User active status toggled.", '/admin/users.php', ['reload' => true]);
+        // Fetch current user & tenant status
+        $uStmt = $pdo->prepare("SELECT au.is_active, au.tenant_id, t.plan_status FROM admin_users au LEFT JOIN tenants t ON au.tenant_id = t.id WHERE au.id = ?");
+        $uStmt->execute([$userId]);
+        $uRow = $uStmt->fetch();
+
+        if ($uRow) {
+            $newActive = $uRow['is_active'] ? 0 : 1;
+            $pdo->prepare("UPDATE admin_users SET is_active = ? WHERE id = ?")->execute([$newActive, $userId]);
+
+            if (!empty($uRow['tenant_id'])) {
+                $newPlanStatus = $newActive ? 'active' : 'suspended';
+                $pdo->prepare("UPDATE tenants SET plan_status = ? WHERE id = ?")->execute([$newPlanStatus, $uRow['tenant_id']]);
+            }
+
+            $msg = $newActive ? "User account activated successfully." : "User account suspended successfully.";
+            respond_flash('success', $msg, '/admin/users.php', ['reload' => true]);
+        } else {
+            respond_flash('error', "User not found.", '/admin/users.php');
+        }
     }
 }
 
 $search = trim($_GET['q'] ?? '');
 
 $sql = "
-    SELECT au.*, t.shop_name 
+    SELECT au.*, t.shop_name, t.plan_status 
     FROM admin_users au
     LEFT JOIN tenants t ON au.tenant_id = t.id
     WHERE au.role = 'tenant_admin'
@@ -111,7 +128,9 @@ require_once __DIR__ . '/header.php';
               </td>
             </tr>
           <?php else: ?>
-            <?php foreach ($users as $u): ?>
+            <?php foreach ($users as $u): 
+              $isSuspended = ((isset($u['is_active']) && (int)$u['is_active'] === 0) || ($u['plan_status'] ?? '') === 'suspended');
+            ?>
               <tr class="hover:bg-slate-50/50 transition-colors">
                 <td class="px-5 py-3 text-slate-400 font-mono text-xs">#<?= $u['id'] ?></td>
                 <td class="px-5 py-3 text-slate-900 font-bold"><?= htmlspecialchars($u['email']) ?></td>
@@ -119,7 +138,7 @@ require_once __DIR__ . '/header.php';
                   <?= htmlspecialchars($u['shop_name'] ?? 'N/A') ?>
                 </td>
                 <td class="px-5 py-3">
-                  <?php if (isset($u['is_active']) && $u['is_active'] == 0): ?>
+                  <?php if ($isSuspended): ?>
                     <span class="px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-200 rounded-full text-[10px] font-black uppercase tracking-wide">Suspended</span>
                   <?php else: ?>
                     <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wide">Active</span>
@@ -129,7 +148,9 @@ require_once __DIR__ . '/header.php';
                   <form method="POST" class="inline-block">
                     <input type="hidden" name="action" value="toggle_active">
                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                    <button type="submit" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-[11px] font-black text-slate-700 transition-colors">Toggle Access</button>
+                    <button type="submit" class="px-3.5 py-1.5 <?= $isSuspended ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300' : 'bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300' ?> rounded-lg text-[11px] font-black transition-colors">
+                      <?= $isSuspended ? '🟢 Activate User' : '🔴 Suspend User' ?>
+                    </button>
                   </form>
                   <button type="button" 
                           onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars($u['email'], ENT_QUOTES) ?>')"
