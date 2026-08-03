@@ -4,7 +4,7 @@
  * Local Shop OS
  */
 
-define('DB_HOST', '127.0.0.1');
+define('DB_HOST', 'localhost');
 define('DB_PORT', '3306');
 define('DB_NAME', 'local_shop_os');
 define('DB_USER', 'root');
@@ -14,7 +14,7 @@ function getDBConnection(): PDO {
     static $pdo = null;
     if ($pdo === null) {
         try {
-            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $dsn = "mysql:host=" . DB_HOST . (DB_HOST !== 'localhost' ? ";port=" . DB_PORT : "") . ";dbname=" . DB_NAME . ";charset=utf8mb4";
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -22,26 +22,7 @@ function getDBConnection(): PDO {
             ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
-            // Attempt auto database creation if database missing
-            try {
-                $rootDsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";charset=utf8mb4";
-                $tmpPdo = new PDO($rootDsn, DB_USER, DB_PASS);
-                $tmpPdo->exec("CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                
-                $sqlFile = __DIR__ . '/../schema.sql';
-                if (file_exists($sqlFile)) {
-                    $tmpPdo->exec("USE `" . DB_NAME . "`");
-                    $tmpPdo->exec(file_get_contents($sqlFile));
-                }
-                
-                $pdo = new PDO("mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS, [
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES   => false,
-                ]);
-            } catch (PDOException $ex) {
-                die("Database connection failed: " . htmlspecialchars($ex->getMessage()));
-            }
+            die("Database connection failed: " . htmlspecialchars($e->getMessage()));
         }
     }
     return $pdo;
