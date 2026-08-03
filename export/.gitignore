@@ -1,0 +1,12 @@
+# Database & Local Runtime Data
+.db_data/
+*.log
+
+# Temp & Cache
+tmp/
+.cache/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/

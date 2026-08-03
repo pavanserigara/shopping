@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /shops.php
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /includes/
+Disallow: /config/
+
+Sitemap: https://localshopos.com/sitemap.xml

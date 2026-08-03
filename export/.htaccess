@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Allow direct access to real files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# Map clean storefront URLs to shop.php
+RewriteRule ^([a-zA-Z0-9-]+)/?$ shop.php?subdomain=$1 [L,QSA]
