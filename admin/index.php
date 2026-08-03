@@ -153,8 +153,16 @@ $totalPaymentsLogged = (float)$pdo->query("SELECT SUM(amount) FROM payment_log")
 // Conversion Rate
 $conversionRate = $totalTenants > 0 ? round(($activeTenants / $totalTenants) * 100, 1) : 0;
 
-// Fetch All Registered Tenants with Health Check Indicators
-$tenantsStmt = $pdo->query("
+// Registered Tenants Table Pagination (5 per page)
+$tenantPage  = max(1, (int)($_GET['tpage'] ?? 1));
+$tenantLimit = 5;
+
+$totalTenantsCount = (int)$pdo->query("SELECT COUNT(*) FROM tenants")->fetchColumn();
+$tenantTotalPages  = max(1, (int)ceil($totalTenantsCount / $tenantLimit));
+if ($tenantPage > $tenantTotalPages) $tenantPage = $tenantTotalPages;
+$tenantOffset = ($tenantPage - 1) * $tenantLimit;
+
+$tenantsStmt = $pdo->prepare("
     SELECT t.*, p.name as plan_name,
            (SELECT COUNT(*) FROM products WHERE tenant_id = t.id) as product_count,
            (SELECT COUNT(*) FROM orders WHERE tenant_id = t.id) as order_count,
@@ -163,16 +171,18 @@ $tenantsStmt = $pdo->query("
     FROM tenants t 
     LEFT JOIN plans p ON t.plan_id = p.id
     ORDER BY t.id DESC
+    LIMIT $tenantLimit OFFSET $tenantOffset
 ");
+$tenantsStmt->execute();
 $tenants = $tenantsStmt->fetchAll();
 
-// Fetch Payment Log History
+// Fetch Payment Log History (5 per page)
 $paymentsStmt = $pdo->query("
     SELECT pl.*, t.shop_name, p.name as plan_name
     FROM payment_log pl
     JOIN tenants t ON pl.tenant_id = t.id
     LEFT JOIN plans p ON pl.plan_id = p.id
-    ORDER BY pl.id DESC LIMIT 15
+    ORDER BY pl.id DESC LIMIT 5
 ");
 $paymentLogs = $paymentsStmt->fetchAll();
 
@@ -409,6 +419,31 @@ require_once __DIR__ . '/header.php';
           <?php endforeach; ?>
         </tbody>
       </table>
+    </div>
+
+    <!-- Tenants Pagination Controls (5 per page) -->
+    <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-500">
+      <div>
+        Showing <span class="text-slate-900 font-black"><?= $totalTenantsCount > 0 ? ($tenantOffset + 1) : 0 ?></span> to <span class="text-slate-900 font-black"><?= min($tenantOffset + $tenantLimit, $totalTenantsCount) ?></span> of <span class="text-slate-900 font-black"><?= $totalTenantsCount ?></span> registered tenant stores
+      </div>
+
+      <?php if ($tenantTotalPages > 1): ?>
+        <div class="flex items-center space-x-1">
+          <?php if ($tenantPage > 1): ?>
+            <a href="?tpage=<?= $tenantPage - 1 ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">&laquo; Prev</a>
+          <?php endif; ?>
+
+          <?php for ($i = 1; $i <= $tenantTotalPages; $i++): ?>
+            <a href="?tpage=<?= $i ?>" class="px-3 py-1.5 rounded-lg text-xs font-black transition-colors <?= $i === $tenantPage ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' ?>">
+              <?= $i ?>
+            </a>
+          <?php endfor; ?>
+
+          <?php if ($tenantPage < $tenantTotalPages): ?>
+            <a href="?tpage=<?= $tenantPage + 1 ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">Next &raquo;</a>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 

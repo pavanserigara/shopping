@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['page'] ?? 1));
-$limit  = 10;
+$limit  = 5;
 
 // Count Total Matching Users
 $countSql = "
