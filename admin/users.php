@@ -67,20 +67,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $search = trim($_GET['q'] ?? '');
+$page   = max(1, (int)($_GET['page'] ?? 1));
+$limit  = 10;
 
+// Count Total Matching Users
+$countSql = "
+    SELECT COUNT(*) 
+    FROM admin_users au
+    LEFT JOIN tenants t ON au.tenant_id = t.id
+    WHERE au.role = 'tenant_admin'
+";
+$countParams = [];
+if (!empty($search)) {
+    $countSql .= " AND (au.email LIKE ? OR t.shop_name LIKE ? OR t.subdomain LIKE ?)";
+    $countParams[] = "%$search%";
+    $countParams[] = "%$search%";
+    $countParams[] = "%$search%";
+}
+
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($countParams);
+$totalUsers = (int)$countStmt->fetchColumn();
+
+$totalPages = max(1, (int)ceil($totalUsers / $limit));
+if ($page > $totalPages) $page = $totalPages;
+$offset = ($page - 1) * $limit;
+
+// Fetch Paginated User Records
 $sql = "
-    SELECT au.*, t.shop_name, t.plan_status 
+    SELECT au.*, t.shop_name, t.subdomain, t.plan_status 
     FROM admin_users au
     LEFT JOIN tenants t ON au.tenant_id = t.id
     WHERE au.role = 'tenant_admin'
 ";
 $params = [];
 if (!empty($search)) {
-    $sql .= " AND (au.email LIKE ? OR t.shop_name LIKE ?)";
+    $sql .= " AND (au.email LIKE ? OR t.shop_name LIKE ? OR t.subdomain LIKE ?)";
+    $params[] = "%$search%";
     $params[] = "%$search%";
     $params[] = "%$search%";
 }
-$sql .= " ORDER BY au.id DESC LIMIT 100";
+$sql .= " ORDER BY au.id DESC LIMIT $limit OFFSET $offset";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -101,8 +128,11 @@ require_once __DIR__ . '/header.php';
     </div>
     <form method="GET" class="flex items-center space-x-2">
       <div class="relative w-full sm:w-64">
-        <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Search email or shop..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400">
+        <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Search email, shop, subdomain..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400">
         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <?php if (!empty($search)): ?>
+          <a href="/admin/users.php" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 text-xs font-black">✕</a>
+        <?php endif; ?>
       </div>
       <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs shadow-sm transition-colors">Search</button>
     </form>
@@ -124,7 +154,7 @@ require_once __DIR__ . '/header.php';
           <?php if(empty($users)): ?>
             <tr>
               <td colspan="5" class="px-5 py-12 text-center text-slate-400 font-bold text-sm">
-                No users found matching your criteria.
+                No registered users found matching your criteria.
               </td>
             </tr>
           <?php else: ?>
@@ -135,7 +165,10 @@ require_once __DIR__ . '/header.php';
                 <td class="px-5 py-3 text-slate-400 font-mono text-xs">#<?= $u['id'] ?></td>
                 <td class="px-5 py-3 text-slate-900 font-bold"><?= htmlspecialchars($u['email']) ?></td>
                 <td class="px-5 py-3 text-amber-800 font-bold text-xs">
-                  <?= htmlspecialchars($u['shop_name'] ?? 'N/A') ?>
+                  <div><?= htmlspecialchars($u['shop_name'] ?? 'N/A') ?></div>
+                  <?php if (!empty($u['subdomain'])): ?>
+                    <span class="text-[10px] text-slate-400 font-mono">/<?= htmlspecialchars($u['subdomain']) ?></span>
+                  <?php endif; ?>
                 </td>
                 <td class="px-5 py-3">
                   <?php if ($isSuspended): ?>
@@ -163,6 +196,31 @@ require_once __DIR__ . '/header.php';
           <?php endif; ?>
         </tbody>
       </table>
+    </div>
+
+    <!-- Pagination Controls (10 per page) -->
+    <div class="px-5 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-500">
+      <div>
+        Showing <span class="text-slate-900 font-black"><?= $totalUsers > 0 ? ($offset + 1) : 0 ?></span> to <span class="text-slate-900 font-black"><?= min($offset + $limit, $totalUsers) ?></span> of <span class="text-slate-900 font-black"><?= $totalUsers ?></span> registered users
+      </div>
+
+      <?php if ($totalPages > 1): ?>
+        <div class="flex items-center space-x-1">
+          <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">&laquo; Prev</a>
+          <?php endif; ?>
+
+          <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?page=<?= $i ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>" class="px-3 py-1.5 rounded-lg text-xs font-black transition-colors <?= $i === $page ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100' ?>">
+              <?= $i ?>
+            </a>
+          <?php endfor; ?>
+
+          <?php if ($page < $totalPages): ?>
+            <a href="?page=<?= $page + 1 ?><?= !empty($search) ? '&q=' . urlencode($search) : '' ?>" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-colors">Next &raquo;</a>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 

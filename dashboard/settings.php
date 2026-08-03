@@ -14,6 +14,7 @@ $pdo      = getDBConnection();
 $stmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
 $stmt->execute([$tenantId]);
 $tenantInfo = $stmt->fetch();
+$tenant     = $tenantInfo;
 
 $isOpen         = (int)($tenantInfo['is_open'] ?? 1);
 $hasLogoFeature = tenant_has_feature($pdo, $tenantInfo, 'shop_logo_upload');
@@ -161,8 +162,8 @@ $tenant = $stmt->fetch();
 
       <form method="POST" action="/dashboard/settings.php" data-no-ajax>
         <input type="hidden" name="action" value="toggle_store_status">
-        <button type="submit" class="w-full py-3 px-4 rounded-xl text-xs font-black text-white shadow-md flex items-center justify-center space-x-2 transition-all <?= $tenant['is_open'] ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700' ?>">
-          <span><?= $tenant['is_open'] ? '🟢 STORE IS CURRENTLY OPEN' : '🔴 STORE IS CLOSED' ?></span>
+        <button type="submit" class="w-full py-3 px-4 rounded-xl text-xs font-black text-white shadow-md flex items-center justify-center space-x-2 transition-all <?= $isOpen ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700' ?>">
+          <span><?= $isOpen ? '🟢 STORE IS CURRENTLY OPEN' : '🔴 STORE IS CLOSED' ?></span>
         </button>
       </form>
     </div>
