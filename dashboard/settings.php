@@ -96,6 +96,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$deliveryEnabled, $deliveryFee, $minDeliveryOrder, $deliveryAreaNote, $thankYouMsg, $tenantId]);
         respond_flash('success', "Delivery & Fulfillment settings saved successfully.", '/dashboard/settings.php', ['reload' => true]);
     }
+
+    if ($action === 'change_password') {
+        $currentPass = trim($_POST['current_password'] ?? '');
+        $newPass     = trim($_POST['new_password'] ?? '');
+        $confirmPass = trim($_POST['confirm_password'] ?? '');
+
+        // Fetch current user from admin_users
+        $userId = $_SESSION['user_id'] ?? 0;
+        $uStmt  = $pdo->prepare("SELECT * FROM admin_users WHERE id = ? AND tenant_id = ?");
+        $uStmt->execute([$userId, $tenantId]);
+        $currUser = $uStmt->fetch();
+
+        if (!$currUser || !password_verify($currentPass, $currUser['password_hash'])) {
+            respond_flash('error', "Current password entered is incorrect.", '/dashboard/settings.php');
+        } elseif (empty($newPass)) {
+            respond_flash('error', "New password cannot be empty.", '/dashboard/settings.php');
+        } elseif (strlen($newPass) < 6) {
+            respond_flash('error', "New password must be at least 6 characters long.", '/dashboard/settings.php');
+        } elseif ($newPass !== $confirmPass) {
+            respond_flash('error', "New password and confirmation password do not match.", '/dashboard/settings.php');
+        } else {
+            $newHash = password_hash($newPass, PASSWORD_DEFAULT);
+            $upStmt  = $pdo->prepare("UPDATE admin_users SET password_hash = ? WHERE id = ? AND tenant_id = ?");
+            $upStmt->execute([$newHash, $userId, $tenantId]);
+            respond_flash('success', "Your account password has been updated successfully!", '/dashboard/settings.php', ['reload' => true]);
+        }
+    }
 }
 
 $pageTitle = "Store Profile & Settings — LocalShopOS";
@@ -298,9 +325,52 @@ $tenant = $stmt->fetch();
           <button type="submit" class="py-3 px-6 btn-cta text-white font-extrabold text-xs rounded-xl shadow-md transition-all">
             Save Delivery Settings
           </button>
+    </div>
+
+    <!-- Security & Password Reset Card -->
+    <div class="app-card p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
+      <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
+          🔐
+        </div>
+        <div>
+          <h3 class="text-base font-black text-slate-900">Security & Account Password</h3>
+          <p class="text-xs text-slate-500">Update your merchant account password to keep your store dashboard secure</p>
+        </div>
+      </div>
+
+      <form method="POST" action="/dashboard/settings.php" data-no-ajax class="space-y-4">
+        <input type="hidden" name="action" value="change_password">
+
+        <div>
+          <label class="block text-xs font-black uppercase text-slate-700 mb-1">Current Password *</label>
+          <input type="password" name="current_password" required placeholder="Enter your current password"
+                 class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-black uppercase text-slate-700 mb-1">New Password *</label>
+            <input type="password" name="new_password" required minlength="6" placeholder="Minimum 6 characters"
+                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900">
+          </div>
+
+          <div>
+            <label class="block text-xs font-black uppercase text-slate-700 mb-1">Confirm New Password *</label>
+            <input type="password" name="confirm_password" required minlength="6" placeholder="Confirm new password"
+                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900">
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex justify-end">
+          <button type="submit" class="py-3 px-6 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center space-x-2">
+            <span>Update Password</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </button>
         </div>
       </form>
     </div>
+
   </div>
 
 </div>
