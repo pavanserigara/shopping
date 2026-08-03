@@ -70,27 +70,32 @@ $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['page'] ?? 1));
 $limit  = 5;
 
-// Count Total Matching Users
-$countSql = "
-    SELECT COUNT(*) 
-    FROM admin_users au
-    LEFT JOIN tenants t ON au.tenant_id = t.id
-    WHERE au.role = 'tenant_admin'
-";
+// Count Total Matching Users (excluding super_admin)
+$whereClause = "WHERE (au.role != 'super_admin' OR au.role IS NULL)";
 $countParams = [];
+
 if (!empty($search)) {
-    $countSql .= " AND (au.email LIKE ? OR t.shop_name LIKE ? OR t.subdomain LIKE ?)";
+    $whereClause .= " AND (au.email LIKE ? OR t.shop_name LIKE ? OR t.subdomain LIKE ? OR t.whatsapp_number LIKE ? OR t.category LIKE ?)";
+    $countParams[] = "%$search%";
+    $countParams[] = "%$search%";
     $countParams[] = "%$search%";
     $countParams[] = "%$search%";
     $countParams[] = "%$search%";
 }
+
+$countSql = "
+    SELECT COUNT(*) 
+    FROM admin_users au
+    LEFT JOIN tenants t ON au.tenant_id = t.id
+    $whereClause
+";
 
 $countStmt = $pdo->prepare($countSql);
 $countStmt->execute($countParams);
 $totalUsers = (int)$countStmt->fetchColumn();
 
 $totalPages = max(1, (int)ceil($totalUsers / $limit));
-if ($page > $totalPages) $page = $totalPages;
+if ($page > $totalPages) $page = 1; // Reset to page 1 if current page is out of range of search results
 $offset = ($page - 1) * $limit;
 
 // Fetch Paginated User Records
@@ -98,19 +103,13 @@ $sql = "
     SELECT au.*, t.shop_name, t.subdomain, t.plan_status 
     FROM admin_users au
     LEFT JOIN tenants t ON au.tenant_id = t.id
-    WHERE au.role = 'tenant_admin'
+    $whereClause
+    ORDER BY au.id DESC 
+    LIMIT $limit OFFSET $offset
 ";
-$params = [];
-if (!empty($search)) {
-    $sql .= " AND (au.email LIKE ? OR t.shop_name LIKE ? OR t.subdomain LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-}
-$sql .= " ORDER BY au.id DESC LIMIT $limit OFFSET $offset";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute($params);
+$stmt->execute($countParams);
 $users = $stmt->fetchAll();
 
 $pageTitle = "User & Tenant Management — Super Admin";
@@ -126,7 +125,7 @@ require_once __DIR__ . '/header.php';
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">👥 Tenant User Management</h1>
       <p class="text-xs text-slate-500 font-medium mt-1">Manage tenant (shop owner) access, suspend accounts, or set custom user passwords.</p>
     </div>
-    <form method="GET" class="flex items-center space-x-2">
+    <form method="GET" action="/admin/users.php" class="flex items-center space-x-2">
       <div class="relative w-full sm:w-64">
         <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Search email, shop, subdomain..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400">
         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
