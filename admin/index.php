@@ -185,7 +185,10 @@ require_once __DIR__ . '/header.php';
       <h1 class="text-2xl font-black text-slate-900">Platform Revenue & Tenant Health Dashboard</h1>
       <p class="text-xs text-slate-500 mt-1 font-medium">Track MRR metrics, log manual subscription payments, and monitor active store health</p>
     </div>
-    <div class="flex items-center space-x-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="/admin/users.php" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl shadow-sm transition-all flex items-center space-x-1.5">
+        <span>👥 User & Password Reset Directory</span>
+      </a>
       <button onclick="document.getElementById('logPaymentModal').classList.remove('hidden')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center space-x-1.5">
         <span>+ Log Manual Payment</span>
       </button>
