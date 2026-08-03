@@ -125,15 +125,35 @@ require_once __DIR__ . '/header.php';
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">👥 Tenant User Management</h1>
       <p class="text-xs text-slate-500 font-medium mt-1">Manage tenant (shop owner) access, suspend accounts, or set custom user passwords.</p>
     </div>
-    <form method="GET" action="/admin/users.php" class="flex items-center space-x-2">
-      <div class="relative w-full sm:w-64">
-        <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Search email, shop, subdomain..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400">
-        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    
+    <!-- Direct Database Search Form with Instant Live Filtering -->
+    <form method="GET" action="/admin/users.php" class="flex items-center space-x-2 w-full sm:w-80">
+      <div class="relative w-full">
+        <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <input
+          type="text"
+          name="q"
+          id="userSearchBar"
+          oninput="filterUsers(this.value)"
+          value="<?= htmlspecialchars($search) ?>"
+          placeholder="Search email, shop, subdomain..."
+          class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-300 transition-all"
+        >
         <?php if (!empty($search)): ?>
-          <a href="/admin/users.php" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 text-xs font-black">✕</a>
+          <a href="/admin/users.php" class="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-700 text-xs font-black">✕</a>
+        <?php else: ?>
+          <button type="button" onclick="clearUserSearch()" id="clearUserSearchBtn" class="hidden absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-700">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         <?php endif; ?>
       </div>
-      <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs shadow-sm transition-colors">Search</button>
+      <button type="submit" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs transition-colors shadow-sm">
+        Search
+      </button>
     </form>
   </div>
 
@@ -160,7 +180,8 @@ require_once __DIR__ . '/header.php';
             <?php foreach ($users as $u): 
               $isSuspended = ((isset($u['is_active']) && (int)$u['is_active'] === 0) || ($u['plan_status'] ?? '') === 'suspended');
             ?>
-              <tr class="hover:bg-slate-50/50 transition-colors">
+              <tr class="hover:bg-slate-50/50 transition-colors user-row"
+                  data-search="<?= strtolower(htmlspecialchars($u['email'] . ' ' . ($u['shop_name'] ?? '') . ' ' . ($u['subdomain'] ?? '') . ' #' . $u['id'])) ?>">
                 <td class="px-5 py-3 text-slate-400 font-mono text-xs">#<?= $u['id'] ?></td>
                 <td class="px-5 py-3 text-slate-900 font-bold"><?= htmlspecialchars($u['email']) ?></td>
                 <td class="px-5 py-3 text-amber-800 font-bold text-xs">
@@ -316,6 +337,29 @@ function togglePasswordVisibility(inputId) {
   const input = document.getElementById(inputId);
   if (input) {
     input.type = input.type === 'password' ? 'text' : 'password';
+  }
+}
+
+function filterUsers(query) {
+  const q = query.toLowerCase().trim();
+  const rows = document.querySelectorAll('.user-row');
+  const clearBtn = document.getElementById('clearUserSearchBtn');
+
+  if (clearBtn) clearBtn.classList.toggle('hidden', q === '');
+
+  rows.forEach(row => {
+    const text = row.getAttribute('data-search') || '';
+    const match = q === '' || text.includes(q);
+    row.style.display = match ? '' : 'none';
+  });
+}
+
+function clearUserSearch() {
+  const bar = document.getElementById('userSearchBar');
+  if (bar) {
+    bar.value = '';
+    filterUsers('');
+    bar.focus();
   }
 }
 </script>
