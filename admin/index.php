@@ -156,7 +156,7 @@ $conversionRate = $totalTenants > 0 ? round(($activeTenants / $totalTenants) * 1
 // Registered Tenants Table Database Search & Pagination (5 per page)
 $tenantSearch = trim($_GET['q'] ?? $_GET['tq'] ?? '');
 $tenantPage   = max(1, (int)($_GET['tpage'] ?? 1));
-$tenantLimit  = 5;
+$tenantLimit  = !empty($tenantSearch) ? 50 : 5;
 
 $countSql = "
     SELECT COUNT(*) 

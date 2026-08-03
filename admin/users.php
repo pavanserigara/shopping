@@ -68,7 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $search = trim($_GET['q'] ?? '');
 $page   = max(1, (int)($_GET['page'] ?? 1));
-$limit  = 5;
+// When searching, show all matching results across all groups (up to 50); otherwise show 5 per page
+$limit  = !empty($search) ? 50 : 5;
 
 // Count Total Matching Users (excluding super_admin)
 $whereClause = "WHERE (au.role != 'super_admin' OR au.role IS NULL)";
@@ -95,10 +96,10 @@ $countStmt->execute($countParams);
 $totalUsers = (int)$countStmt->fetchColumn();
 
 $totalPages = max(1, (int)ceil($totalUsers / $limit));
-if ($page > $totalPages) $page = 1; // Reset to page 1 if current page is out of range of search results
+if ($page > $totalPages) $page = 1;
 $offset = ($page - 1) * $limit;
 
-// Fetch Paginated User Records
+// Fetch User Records across all groups in database
 $sql = "
     SELECT au.*, t.shop_name, t.subdomain, t.plan_status 
     FROM admin_users au
@@ -126,7 +127,7 @@ require_once __DIR__ . '/header.php';
       <p class="text-xs text-slate-500 font-medium mt-1">Manage tenant (shop owner) access, suspend accounts, or set custom user passwords.</p>
     </div>
     
-    <!-- Direct Database Search Form with Instant Live Filtering -->
+    <!-- Direct Database Search Form (Searches All Groups in Database) -->
     <form method="GET" action="/admin/users.php" class="flex items-center space-x-2 w-full sm:w-80">
       <div class="relative w-full">
         <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -138,17 +139,12 @@ require_once __DIR__ . '/header.php';
           type="text"
           name="q"
           id="userSearchBar"
-          oninput="filterUsers(this.value)"
           value="<?= htmlspecialchars($search) ?>"
-          placeholder="Search email, shop, subdomain..."
+          placeholder="Search all groups by email, shop..."
           class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-300 transition-all"
         >
         <?php if (!empty($search)): ?>
           <a href="/admin/users.php" class="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-700 text-xs font-black">✕</a>
-        <?php else: ?>
-          <button type="button" onclick="clearUserSearch()" id="clearUserSearchBtn" class="hidden absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-slate-700">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
         <?php endif; ?>
       </div>
       <button type="submit" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs transition-colors shadow-sm">
