@@ -1,5 +1,5 @@
 -- LocalShopOS Production Database Dump with Demo Data
--- Generated: 2026-08-03 14:08:39
+-- Generated: 2026-08-03 14:25:35
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `ad_views`;
@@ -145,17 +145,17 @@ CREATE TABLE `admin_users` (
   CONSTRAINT `admin_users_ibfk_1` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('1', NULL, 'super_admin', 'admin@localshopos.com', '$2y$10$jTZbgU1NUzBuSv/UE1r..u0/Ubw0hRlYNchLSgfsz87g.Y1ScRLLG', '2026-08-03 18:35:13', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('2', '1', 'tenant_admin', 'ramesh@kirana.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 18:35:34', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('4', '2', 'tenant_admin', 'contact@freshfarm.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:40', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('5', '3', 'tenant_admin', 'info@guptabakery.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:57', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('6', '4', 'tenant_admin', 'sales@apexelectronics.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:58', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('7', '5', 'tenant_admin', 'support@voguetrends.in', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:58', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('8', '6', 'tenant_admin', 'care@greenleafmeds.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:58', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('9', '7', 'tenant_admin', 'sales@royalfootwear.in', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:59', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('10', '8', 'tenant_admin', 'hello@spicegarden.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:59', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('11', '9', 'tenant_admin', 'sales@urbannest.in', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:59', '1');
-INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('12', '10', 'tenant_admin', 'hello@petjoycare.com', '$2y$10$Jle1OQaWdI.stxpkZ17w0.Gzkzz9Qqg4CBlwt4t.nCWXfUJm9gy8K', '2026-08-03 19:15:59', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('1', NULL, 'super_admin', 'admin@localshopos.com', '$2y$10$MQhmuTpmsi86adXmu8yzZOHIyIWsR1AJafKet8lyWoxWPWhU56Qci', '2026-08-03 18:35:13', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('2', '1', 'tenant_admin', 'ramesh@kirana.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 18:35:34', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('4', '2', 'tenant_admin', 'contact@freshfarm.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:40', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('5', '3', 'tenant_admin', 'info@guptabakery.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:57', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('6', '4', 'tenant_admin', 'sales@apexelectronics.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:58', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('7', '5', 'tenant_admin', 'support@voguetrends.in', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:58', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('8', '6', 'tenant_admin', 'care@greenleafmeds.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:58', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('9', '7', 'tenant_admin', 'sales@royalfootwear.in', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:59', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('10', '8', 'tenant_admin', 'hello@spicegarden.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:59', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('11', '9', 'tenant_admin', 'sales@urbannest.in', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:59', '1');
+INSERT INTO `admin_users` (`id`, `tenant_id`, `role`, `email`, `password_hash`, `created_at`, `is_active`) VALUES ('12', '10', 'tenant_admin', 'hello@petjoycare.com', '$2y$10$CFFT6.HrDoZTCxdPShfQBuUyMOKHc4B2bA8yLDBSX90HuVZ4Zi0ze', '2026-08-03 19:15:59', '1');
 
 DROP TABLE IF EXISTS `ads`;
 CREATE TABLE `ads` (
