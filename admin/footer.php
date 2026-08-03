@@ -41,9 +41,11 @@ document.addEventListener('submit', function(e) {
       const modal1 = document.getElementById('tenantControlModal');
       const modal2 = document.getElementById('logPaymentModal');
       const modal3 = document.getElementById('planModal');
+      const modal4 = document.getElementById('resetPasswordModal');
       if (modal1) modal1.classList.add('hidden');
       if (modal2) modal2.classList.add('hidden');
       if (modal3) modal3.classList.add('hidden');
+      if (modal4) modal4.classList.add('hidden');
 
       if (data.reload) {
         const freshUrl = window.location.pathname + '?_t=' + Date.now();

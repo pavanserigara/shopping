@@ -169,44 +169,58 @@ require_once __DIR__ . '/header.php';
 </main>
 
 <!-- Super Admin User Password Reset Modal -->
-<div id="resetPasswordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md transition-all duration-200">
-  <div class="max-w-md w-full bg-[#161F33] border-2 border-brand-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(245,180,0,0.2)] text-white relative animate-fade-in">
+<div id="resetPasswordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-200">
+  <div class="max-w-md w-full bg-[#161F33] border-2 border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(245,180,0,0.25)] text-white relative">
     
-    <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-2xl bg-brand-500/20 text-brand-400 border border-brand-500/30 flex items-center justify-center font-black text-lg">
+        <div class="w-10 h-10 rounded-2xl bg-amber-400/20 text-amber-400 border border-amber-400/30 flex items-center justify-center font-black text-lg">
           🔐
         </div>
         <div>
-          <h3 class="text-base font-black text-white">Reset User Password</h3>
-          <p class="text-xs text-brand-400 font-bold" id="resetModalUserEmail">user@example.com</p>
+          <h3 class="text-base font-black text-white">Set User Password</h3>
+          <p class="text-xs text-amber-400 font-bold" id="resetModalUserEmail">user@example.com</p>
         </div>
       </div>
       <button type="button" onclick="closeResetModal()" class="text-slate-400 hover:text-white p-1 rounded-lg text-lg">✕</button>
     </div>
 
-    <form method="POST" action="/admin/users.php" class="space-y-4">
+    <form method="POST" action="/admin/users.php" data-no-ajax class="space-y-4">
       <input type="hidden" name="action" value="reset_password">
       <input type="hidden" name="user_id" id="resetModalUserId" value="0">
 
-      <div>
-        <label class="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1.5">New Password *</label>
+      <div class="flex justify-between items-center">
+        <label class="block text-xs font-black uppercase tracking-wider text-slate-300">New Password *</label>
+        <button type="button" onclick="generateAutoPassword()" class="text-[11px] font-black text-amber-400 hover:text-amber-300 flex items-center space-x-1">
+          <span>🎲 Generate Random</span>
+        </button>
+      </div>
+
+      <div class="relative">
         <input type="password" name="new_password" id="resetModalNewPassword" required minlength="6" placeholder="Enter new password"
-               class="w-full px-4 py-3 bg-[#0A1120] border border-white/20 rounded-xl text-xs text-white placeholder-slate-500 focus:border-brand-400 focus:outline-none font-bold">
+               class="w-full px-4 py-3 bg-[#0A1120] border border-white/20 rounded-xl text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none font-bold pr-10">
+        <button type="button" onclick="togglePasswordVisibility('resetModalNewPassword')" class="absolute right-3 top-3 text-slate-400 hover:text-white text-xs font-bold">
+          👁️
+        </button>
       </div>
 
       <div>
         <label class="block text-xs font-black uppercase tracking-wider text-slate-300 mb-1.5">Confirm New Password *</label>
-        <input type="password" name="confirm_password" id="resetModalConfirmPassword" required minlength="6" placeholder="Confirm new password"
-               class="w-full px-4 py-3 bg-[#0A1120] border border-white/20 rounded-xl text-xs text-white placeholder-slate-500 focus:border-brand-400 focus:outline-none font-bold">
+        <div class="relative">
+          <input type="password" name="confirm_password" id="resetModalConfirmPassword" required minlength="6" placeholder="Confirm new password"
+                 class="w-full px-4 py-3 bg-[#0A1120] border border-white/20 rounded-xl text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none font-bold pr-10">
+          <button type="button" onclick="togglePasswordVisibility('resetModalConfirmPassword')" class="absolute right-3 top-3 text-slate-400 hover:text-white text-xs font-bold">
+            👁️
+          </button>
+        </div>
       </div>
 
       <div class="pt-3 flex items-center space-x-3">
         <button type="button" onclick="closeResetModal()" class="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">
           Cancel
         </button>
-        <button type="submit" class="w-2/3 py-3 btn-gold-action text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all">
-          Update Password &rarr;
+        <button type="submit" class="w-2/3 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all border border-amber-300 flex items-center justify-center space-x-1">
+          <span>Save New Password &rarr;</span>
         </button>
       </div>
     </form>
@@ -225,6 +239,27 @@ function openResetModal(userId, userEmail) {
 
 function closeResetModal() {
   document.getElementById('resetPasswordModal').classList.add('hidden');
+}
+
+function generateAutoPassword() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#';
+  let pass = '';
+  for (let i = 0; i < 10; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const p1 = document.getElementById('resetModalNewPassword');
+  const p2 = document.getElementById('resetModalConfirmPassword');
+  p1.value = pass;
+  p2.value = pass;
+  p1.type = 'text';
+  p2.type = 'text';
+}
+
+function togglePasswordVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
 }
 </script>
 
